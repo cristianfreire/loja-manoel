@@ -2,9 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
+
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const config_env = app.get(ConfigService);
+  const port = config_env.get<number>('PORT') || 3000;
+
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
@@ -12,13 +17,19 @@ async function bootstrap() {
   }));
 
   const config = new DocumentBuilder()
-    .setTitle('Packing API')
-    .setDescription('API para empacotamento de pedidos em caixas')
+    .setTitle('API Loja Manoel')
+    .setDescription('API para empacotamento de pedidos')
     .setVersion('1.0')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'access-token', // nome da segurança que será usada nos endpoints
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('swagger', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(port);
+  console.log(`Servidor rodando na porta ${port}`);
+
 }
 bootstrap();
